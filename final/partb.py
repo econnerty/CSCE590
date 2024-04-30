@@ -12,30 +12,6 @@ A = np.array([
 
 b = np.array([3, 1, 2,8, 0, 1])
 
-def gram_schmidt(A):
-    m, n = A.shape
-    Q = np.zeros((m, n))
-    R = np.zeros((n, n))
-    
-    for k in range(n):
-        Q[:, k] = A[:, k]
-        for i in range(k):
-            R[i, k] = np.dot(Q[:, i].T, A[:, k])
-            Q[:, k] -= R[i, k] * Q[:, i]
-        R[k, k] = np.linalg.norm(Q[:, k])
-        Q[:, k] /= R[k, k]
-    
-    return Q, R
-
-def back_substitution(R, Qb):
-    n = R.shape[1]
-    x = np.zeros(n)
-    for i in reversed(range(n)):
-        x[i] = Qb[i]
-        for j in range(i+1, n):
-            x[i] -= R[i, j] * x[j]
-        x[i] /= R[i, i]
-    return x
 
 # Least Squares Solution
 def least_squares(A, b):
@@ -57,28 +33,43 @@ def regularized_least_squares(A, b, lambda_value):
 lambda_value = 0.5
 x_reg = regularized_least_squares(A, b, lambda_value)
 
-# Linear Programming Solver (Relaxed to Least Squares for simplicity)
-# Here we simply use the least squares as a placeholder
-# In practice, for LP, you would use a simplex method or similar
-# QR Decomposition using Gram-Schmidt
-Q, R = gram_schmidt(A)
 
-# Compute Q^T * b
-Qb = np.dot(Q.T, b)
 
-# Solve the system using back substitution
-x_qr = back_substitution(R[:A.shape[1], :], Qb[:A.shape[1]])
+#Steepest descent
+def steepest_descent(A, b):
+    # Initial guess (random or zeros)
+    x = np.zeros(A.shape[1])
 
+    # Learning rate
+    alpha = 0.01
+
+    # Maximum iterations
+    max_iter = 100
+
+    # Steepest Descent Optimization
+    for i in range(max_iter):
+        # Compute the residual
+        r = A.dot(x) - b
+        # Compute the gradient (A^T * residual)
+        grad = A.T.dot(r)
+        # Update the solution
+        x = x - alpha * grad
+        # Check if the solution satisfies the constraints
+        if np.allclose(A.dot(x), b, atol=1e-5):
+            break
+    return x
+
+x_linear = steepest_descent(A,b)#Solve with linear programming
 print("Least Squares Solution:", x_ls)
 print("Regularized Least Squares Solution:", x_reg)
-print("QR Decomposition:", x_qr)
+print("Linear Programming:", x_linear)
 
 from sklearn.decomposition import PCA
 
 
 
 # Stack the solution vectors into a matrix where each row is a solution vector
-solutions = np.array([x_ls, x_reg, x_qr])
+solutions = np.array([x_ls, x_reg, x_linear])
 
 # Initialize PCA and fit it to the solutions to reduce to 2 dimensions
 pca = PCA(n_components=2)
